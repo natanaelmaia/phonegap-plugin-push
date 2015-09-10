@@ -84,20 +84,30 @@ public class GCMIntentService extends GCMBaseIntentService {
 
         // Extract the payload from the message
         Bundle extras = intent.getExtras();
+        Log.d(LOG_TAG, "onMessage - extras: " + extras);
+
         if (extras != null) {
+
+            try {
+                JSONObject data = new JSONObject(extras.getString("data"));
+                extras.putString("title", data.getString("title"));
+                extras.putString("message", data.getString("message"));
+                extras.putInt("id", data.getInt("id"));
+                extras.putString("url", data.getString("url"));
+                extras.putString("smallIcon", data.getString("smallIcon"));
+                extras.putString("style", data.getString("style"));
+                extras.putString("summaryText", data.getString("summaryText"));
+            } catch (JSONException e) { 
+                Log.d(LOG_TAG, "onMessage - exception: " + e);  
+            }
+
             // if we are in the foreground, just surface the payload, else post it to the statusbar
             if (PushPlugin.isInForeground()) {
                 extras.putBoolean("foreground", true);
                 PushPlugin.sendExtras(extras);
-            }
-            else {
+            } else if (extras.getString("message") != null && extras.getString("message").length() != 0) {
                 extras.putBoolean("foreground", false);
-
-                // Send a notification if there is a message
-                String message = this.getMessageText(extras);
-                if (message != null && message.length() != 0) {
-                    createNotification(context, extras);
-                }
+                createNotification(context, extras);
             }
         }
     }
